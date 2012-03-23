@@ -1,7 +1,101 @@
 <html>
-	<head><title>Home</title></head>
+	<head>
+		<title>Whose turn is it?</title>
+		<script src='jquery-1.7.1.min.js' ></script>
+		<script src='underscore-1.3.1-min.js' ></script>
+		<script src='moment-1.4.0.min.js' ></script>
+
+		<script src='controller.js' ></script>
+
+	</head>
 	<body>
-		<h1>Home</h1>
-		<p>Whatever</p>
+		<h1>Whose turn is it?</h1>
+
+
+		<span style='display: block; color: red;'> It is <span id="whose_turn"></span>'s turn!!!! </span>
+
+		
+		<div style="float: left">
+			<h3>History</h3>
+			<ul id="historylist"></ul>
+		</div>
+
+		<div style="float: left; margin-left: 50px;">
+			<h3>Users</h3>
+			<ul id="userlist"></ul>
+		</div>
+		<div style="float: left; margin-left: 50px; padding-top: 100px;">
+			<label for='newuser'/>
+			<input id='newusername' type='text'>
+			<input type='button' onclick='addNewUser()' value='Add new user' >
+		</div>
+
+		<script type='text/javascript' >
+
+			function addUser(user){
+				$("#userlist").append( 
+					'<li>' + user.name + 
+					'<input type="button" value="Take turn" onclick="takeTurn(\''+ user.name +'\');"></li>'
+					);
+			}
+
+			function addHistory(history) {
+				$('#historylist').append(
+					'<li>'+ history.name + " " + moment(history.date).format('DD/MM/YYYY') + '</li>'
+					);
+			}
+
+			
+			function populateUsers(){
+				callwhoseturn('/users', 'GET', function(result){
+						$("#userlist").html("");
+						_.each(result.users, function(user){
+							addUser(user);
+						});
+					});
+			}
+
+			function takeTurn(name){
+				$.post("/user/taketurn/"+name, function(result){
+					populateHistory();
+					populateWhoseTurn();
+				});
+			}
+
+
+			function addNewUser(){
+				var name = $('#newusername').val();
+				$.post("/user/add/"+name, function(result){
+						populateUsers();
+						populateWhoseTurn();
+					});
+			}
+
+			function populateHistory(){
+				callwhoseturn('/history', 'GET', function(result){
+					$("#historylist").html("");
+						_.each(result.history, function(history){
+							addHistory(history);
+						});
+					});
+			}
+
+			function populateWhoseTurn(){
+
+				callwhoseturn('/whoseturn', 'GET', function(result){
+						$("#whose_turn").html("<span>" +result.name + "</span>"); 
+					}, function(err){
+						console.log("ERROR"+err);
+						$("#whose_turn").html("<span>Nobody</span>"); 
+					});
+			}
+
+			$(function(){
+				populateUsers();
+				populateHistory();
+				populateWhoseTurn();
+			});
+
+		</script>
 	</body>
 </html>
